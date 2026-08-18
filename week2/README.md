@@ -1,4 +1,4 @@
-# Week 2 — DL-03 LLM Retrieval System (RAG)
+# LAB2 — DL-03 LLM Retrieval System (RAG)
 
 A retrieval-augmented generation pipeline built from scratch in Python: text extraction, chunking,
 embeddings, a FAISS vector database, and semantic search over a Thai personal-finance knowledge base.
