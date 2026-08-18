@@ -5,12 +5,12 @@
 # Retrieval quality depends on the user's query. Real users often write
 # short or ambiguous questions, or use slang.
 #
-#     "I have a sore on my private part"   ← slang
-#     Knowledge base: "penis"
+#     "โดนดูดเงินจากแบงก์"                  ← slang
+#     Knowledge base: "แอปดูดเงิน", "ธนาคาร"
 #
 #     "So what's the difference?"          ← unclear without context
 #
-# Since the knowledge base uses medical terms, query transformation helps
+# Since the knowledge base uses technical terms, query transformation helps
 # bridge the gap between user language and stored documents.
 #
 # Two levels are available:
@@ -40,15 +40,17 @@ from src.prompt_templates import HYDE_PROMPT, MULTI_QUERY_PROMPT, REWRITE_PROMPT
 
 # ตารางแทนคำแสลง — เพิ่มคำได้ตามต้องการ ไม่ต้องแก้โค้ดส่วนอื่น
 SLANG_MAP = {
-    "น้องชาย": "อวัยวะเพศชาย",
-    "น้องสาว": "อวัยวะเพศหญิง",
-    "จู๋": "อวัยวะเพศชาย",
-    "จิ๋ม": "อวัยวะเพศหญิง",
-    "ถุงยาง": "ถุงยางอนามัย",
-    "เอดส์": "เอชไอวี",
-    "มีอะไรกัน": "มีเพศสัมพันธ์",
-    "โรคจากเซ็กส์": "โรคติดต่อทางเพศสัมพันธ์",
-    "เมนส์": "ประจำเดือน",
+    "มิจ": "มิจฉาชีพ",
+    "โจร": "มิจฉาชีพ",
+    "แก๊งคอล": "แก๊งคอลเซ็นเตอร์",
+    "แบงก์": "ธนาคาร",
+    "ตังค์": "เงิน",
+    "เฟซ": "เฟซบุ๊ก",
+    "โดนโกง": "ถูกหลอกลวง",
+    "โดนแฮก": "บัญชีถูกแฮก",
+    "โดนดูดเงิน": "แอปดูดเงิน",
+    "เว็บปลอม": "เว็บไซต์ปลอม",
+    "ไวรัส": "มัลแวร์",
 }
 
 # คำลงท้ายที่ไม่ช่วยในการค้นหา
@@ -59,7 +61,7 @@ def normalize_query(query):
     """
     ปรับคำถามแบบไม่ใช้ AI — เร็วและฟรี
 
-        "เป็นแผลที่น้องชายครับ"  →  "เป็นแผลที่อวัยวะเพศชาย"
+        "โดนมิจโทรมาหลอกครับ"  →  "โดนมิจฉาชีพโทรมาหลอก"
     """
     text = re.sub(r"\s+", " ", query).strip()       # ตัดช่องว่างซ้ำซ้อน
 

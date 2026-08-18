@@ -1,13 +1,13 @@
 {
   "file": {
-    "size": 434781,
-    "mtime": 1786373279
+    "size": 397119,
+    "mtime": 1787040177
   },
   "settings": {
     "CHUNK_SIZE": 400,
     "CHUNK_OVERLAP": 50,
     "EMBEDDING_MODEL_NAME": "paraphrase-multilingual-MiniLM-L12-v2"
   },
-  "n_chunks": 541,
-  "source_file": "sex_q_a.txt"
+  "n_chunks": 404,
+  "source_file": "scam_q_a.txt"
 }

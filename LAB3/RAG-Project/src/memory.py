@@ -58,7 +58,7 @@ class ConversationMemory:
 # Short follow-up questions usually require conversation history.
 # Used to decide whether query rewriting is needed.
 # Example: "What are the side effects?" → True
-# Example: "What is PrEP?" → False
+# Example: "What is a mule account?" → False
 
 
     def is_followup(self, query):

@@ -43,17 +43,23 @@ similarity, and top-k semantic retrieval, laid out as labs 01–07 plus reusable
 
 ### LAB 3 — DL-04 RAG System Development I
 
-The retrieval pipeline from LAB 2 built out into a complete RAG system over a Thai sexual-health
-knowledge base of 391 question/answer pairs (541 chunks): BM25 keyword search fused with dense
-retrieval through Reciprocal Rank Fusion, cross-encoder reranking, query transformation
+The retrieval pipeline from LAB 2 built out into a complete RAG system: BM25 keyword search fused
+with dense retrieval through Reciprocal Rank Fusion, cross-encoder reranking, query transformation
 (rewrite / multi-query / HyDE), LLM answer generation with inline citations, and conversation memory
 — every stage switchable in `config.py` so its contribution can be measured.
 
+The knowledge base is written for this lab: **391 Thai question/answer pairs on online scams,
+phishing and personal cyber-security** (404 chunks), covering phishing links, call-centre gangs,
+passwords and 2FA, money-draining apps, investment scams, and Thai-specific recourse — the 1441
+hotline, online police reporting, and mule-account liability. Every subject is written in three
+registers (formal, conversational, slang), which is what makes the retrieval comparison meaningful.
+
 The evaluation module implements Hit@k, Recall@k, Precision@k, MRR and nDCG@k from scratch and scores
 each retrieval configuration against a golden set of 54 items in four query styles. Hybrid retrieval
-beats dense-only on MRR (0.8445 → 0.9219) with the largest gain on keyword-style queries, and BM25
-scoring a perfect 1.0000 turned out to expose a leak in how the golden set is generated rather than a
-strength of the method. Four defects in the course code were found and fixed along the way, the most
-serious being a prompt-parsing mismatch that made the no-LLM mode refuse every question.
+beats dense-only on every variant, and by the widest margin exactly where it should: on slang queries
+MRR goes from 0.7083 to 0.9429, a 33 % gain, while hit@10 reaches a perfect 1.0000. BM25 alone
+scoring 0.9933 turned out to expose a leak in how the golden set is generated rather than a strength
+of the method. Four defects in the course code were found and fixed along the way, the most serious
+being a prompt-parsing mismatch that made the no-LLM mode refuse every question.
 
 Details, full result tables and the fix list: [`LAB3/README.md`](LAB3/README.md)

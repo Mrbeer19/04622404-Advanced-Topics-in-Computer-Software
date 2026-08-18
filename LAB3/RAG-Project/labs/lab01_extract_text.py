@@ -1,6 +1,6 @@
 
 
-# LAB 1: Read data/sex_q_a.txt and extract the Q&A pairs.
+# LAB 1: Read data/scam_q_a.txt and extract the Q&A pairs.
 # Save the results to outputs/extracted_text.json.
 # Run: python labs/lab01_extract_text.py
 

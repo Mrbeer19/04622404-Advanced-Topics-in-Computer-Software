@@ -40,7 +40,7 @@ def main():
     index_meta.warn_if_stale()
 
     print("--" * 30)
-    print("Sexual Health Question Answering System")
+    print("Online Scam Awareness Question Answering System")
     print("--" * 30)
 
     rag = RAGPipeline()

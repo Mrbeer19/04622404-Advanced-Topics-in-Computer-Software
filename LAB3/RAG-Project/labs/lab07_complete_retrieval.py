@@ -18,10 +18,10 @@ from src.retriever import Retriever
 # Questions for testing the retrieval system 
 # (covering multiple categories in the data) 
 SAMPLE_QUERIES = [
-    "ถุงยางอนามัยแตกต้องทำยังไง",
-    "PrEP กับ PEP ต่างกันยังไง",
-    "ควรตรวจโรคติดต่อทางเพศสัมพันธ์บ่อยแค่ไหน",
-    "ความยินยอมในเรื่องเพศคืออะไร",
+    "กดลิงก์ปลอมไปแล้วต้องทำยังไง",
+    "OTP กับ 2FA ต่างกันยังไง",
+    "ควรตรวจสอบอุปกรณ์ที่ล็อกอินค้างไว้บ่อยแค่ไหน",
+    "บัญชีม้าคืออะไร",
 ]
 
 def main():

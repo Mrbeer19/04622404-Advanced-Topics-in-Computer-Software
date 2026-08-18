@@ -32,7 +32,7 @@ VECTOR_DB_DIR = os.path.join(BASE_DIR, "vector_db")
 
 
 # clack python build_index.py
-SOURCE_FILE = os.path.join(DATA_DIR, "sex_q_a.txt")
+SOURCE_FILE = os.path.join(DATA_DIR, "scam_q_a.txt")
 GOLDEN_SET_FILE = os.path.join(DATA_DIR, "golden_set.json")
 
 # ผลลัพธ์ระหว่างทางจาก build_index.py
@@ -83,7 +83,7 @@ LLM_PROVIDERS = {
 # 6. ข้อความและการวัดผล
 MEMORY_MAX_TURNS = 6    # จำนวนรอบของการจำบทสนทนา
 NO_CONTEXT_MESSAGE = "ขออภัย ไม่พบข้อมูลที่เกี่ยวข้อง"
-DISCLAIMER = "หมายเหตุ: ข้อมูลนี้ใช้เพื่อการศึกษาเท่านั้น"
+DISCLAIMER = "หมายเหตุ: ข้อมูลนี้ใช้เพื่อการศึกษาเท่านั้น ไม่ใช่คำปรึกษากฎหมายรายกรณี"
 
 EVAL_K_VALUES = [1, 3, 5, 10]
 GOLDEN_SET_SIZE = 60

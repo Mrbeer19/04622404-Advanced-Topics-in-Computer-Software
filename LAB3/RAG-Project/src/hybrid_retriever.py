@@ -31,7 +31,7 @@ ENGLISH_PATTERN = re.compile(r"[A-Za-z0-9]+")   # คำอังกฤษหร
 def tokenize(text):
 # Tokenize text for BM25.
 # Convert English words to lowercase for case-insensitive matching.
-# Example: "PrEP กับ PEP ต่างกันยังไง" → ['prep', 'pep', 'กับ', 'ต่างกัน', 'ยังไง']
+# Example: "OTP กับ 2FA ต่างกันยังไง" → ['otp', '2', 'fa', 'กับ', 'ต่างกัน', 'ยังไง']
 
     tokens = []
 
