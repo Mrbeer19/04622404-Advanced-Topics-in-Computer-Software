@@ -19,8 +19,9 @@ The course follows the official course description and extends it with modern AI
 
 | LAB | Work | My part | Folder |
 |---|---|---|---|
-| 1 | LLM data pipeline (team project) | Chunking, stage 3 of the pipeline | [`week1/`](week1/) |
-| 2 | DL-03 LLM Retrieval System (RAG) | Whole project: chunking, embeddings, FAISS vector database, retrieval | [`week2/`](week2/) |
+| 1 | LLM data pipeline (team project) | Chunking, stage 3 of the pipeline | [`LAB1/`](LAB1/) |
+| 2 | DL-03 LLM Retrieval System (RAG) | Whole project: chunking, embeddings, FAISS vector database, retrieval | [`LAB2/`](LAB2/) |
+| 3 | DL-04 RAG System Development I | Whole project: hybrid retrieval, reranking, generation, evaluation | [`LAB3/`](LAB3/) |
 
 ### LAB 1 — Chunking (LLM data pipeline)
 
@@ -39,3 +40,20 @@ A complete retrieval pipeline written from scratch over a Thai personal-finance 
 question/answer pairs: chunking into 523 chunks, multilingual embeddings
 (`paraphrase-multilingual-MiniLM-L12-v2`, 384 dimensions), a FAISS index searched by cosine
 similarity, and top-k semantic retrieval, laid out as labs 01–07 plus reusable modules.
+
+### LAB 3 — DL-04 RAG System Development I
+
+The retrieval pipeline from LAB 2 built out into a complete RAG system over a Thai sexual-health
+knowledge base of 391 question/answer pairs (541 chunks): BM25 keyword search fused with dense
+retrieval through Reciprocal Rank Fusion, cross-encoder reranking, query transformation
+(rewrite / multi-query / HyDE), LLM answer generation with inline citations, and conversation memory
+— every stage switchable in `config.py` so its contribution can be measured.
+
+The evaluation module implements Hit@k, Recall@k, Precision@k, MRR and nDCG@k from scratch and scores
+each retrieval configuration against a golden set of 54 items in four query styles. Hybrid retrieval
+beats dense-only on MRR (0.8445 → 0.9219) with the largest gain on keyword-style queries, and BM25
+scoring a perfect 1.0000 turned out to expose a leak in how the golden set is generated rather than a
+strength of the method. Four defects in the course code were found and fixed along the way, the most
+serious being a prompt-parsing mismatch that made the no-LLM mode refuse every question.
+
+Details, full result tables and the fix list: [`LAB3/README.md`](LAB3/README.md)

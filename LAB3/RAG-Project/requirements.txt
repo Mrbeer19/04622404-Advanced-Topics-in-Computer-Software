@@ -1,0 +1,10 @@
+# DL-04 RAG System Development I
+# ทดสอบแล้วบน macOS (Apple Silicon) + Python 3.11
+# ติดตั้ง:  pip install -r requirements.txt
+
+sentence-transformers>=5.0      # โมเดล embedding + cross-encoder reranker
+faiss-cpu>=1.9                  # ฐานข้อมูลเวกเตอร์ (dense retrieval)
+rank_bm25>=0.2.2                # ดัชนี BM25 (keyword retrieval)
+pythainlp>=5.0                  # ตัดคำไทยให้ BM25 — ขาดตัวนี้คะแนน BM25 จะตกอย่างมาก
+numpy>=1.26
+openai>=1.40                    # ใช้เป็น client กลาง เรียกได้ทั้ง ollama / openai / gemini
