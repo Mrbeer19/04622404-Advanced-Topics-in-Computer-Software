@@ -17,7 +17,7 @@ The course follows the official course description and extends it with modern AI
 
 ## Course Work
 
-| Week | Work | My part | Folder |
+| LAB | Work | My part | Folder |
 |---|---|---|---|
 | 1 | LLM data pipeline (team project) | Chunking, stage 3 of the pipeline | [`week1/`](week1/) |
 | 2 | DL-03 LLM Retrieval System (RAG) | Whole project: chunking, embeddings, FAISS vector database, retrieval | [`week2/`](week2/) |
