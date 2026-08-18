@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG AI Assistant — ผู้ช่วยตอบคำถามภัยออนไลน์</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🛡️</text></svg>">
+</head>
+<body>
+
+<!-- 1. Header -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">🛡️</div>
+      <div>
+        <h1>RAG AI Assistant</h1>
+        <p>ผู้ช่วยตอบคำถามเรื่องภัยออนไลน์และการหลอกลวงทางไซเบอร์ — ตอบจากคลังความรู้ที่คัดไว้ พร้อมบอกแหล่งอ้างอิงทุกคำตอบ</p>
+      </div>
+    </div>
+
+    <div class="header-side">
+      <div id="status" class="status status--loading">
+        <span class="status-dot"></span>
+        <span id="status-text">กำลังตรวจสอบระบบ...</span>
+      </div>
+      <button id="btn-clear" class="btn btn--ghost" type="button" title="ล้างประวัติการสนทนา">
+        ล้างประวัติ
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="app-main">
+
+  <!-- 2. Chat Interface -->
+  <section id="chat" class="chat" aria-live="polite" aria-label="ประวัติการสนทนา">
+
+    <!-- หน้าจอเริ่มต้น + คำถามตัวอย่าง -->
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon" aria-hidden="true">💬</div>
+      <h2>เริ่มถามคำถามได้เลย</h2>
+      <p>พิมพ์คำถามด้วยภาษาพูดปกติได้ ระบบจะค้นจากคลังความรู้ก่อนตอบเสมอ<br>
+         ถ้าไม่มีข้อมูลในคลัง ระบบจะบอกว่าไม่พบ แทนที่จะเดาคำตอบ</p>
+
+      <div class="examples">
+        <span class="examples-label">คำถามตัวอย่าง</span>
+        <div class="examples-list">
+          <button class="chip" type="button">ฟิชชิง (phishing) คืออะไร</button>
+          <button class="chip" type="button">รหัส OTP คืออะไร ทำไมห้ามบอกใคร</button>
+          <button class="chip" type="button">แก๊งคอลเซ็นเตอร์คืออะไร ทำงานอย่างไร</button>
+          <button class="chip" type="button">การสวมซิม (SIM swap) คืออะไร</button>
+          <button class="chip" type="button">ลิงก์ปลอมสังเกตอย่างไร</button>
+          <button class="chip" type="button">บัญชีถูกแฮกแล้วต้องทำอะไรตามลำดับ</button>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- 3. ช่องป้อนคำถาม -->
+  <section class="composer">
+    <form id="form" class="composer-inner" autocomplete="off">
+      <div class="input-wrap">
+        <textarea
+          id="input"
+          rows="1"
+          maxlength="1000"
+          placeholder="พิมพ์คำถามที่นี่...  (Enter = ส่ง, Shift + Enter = ขึ้นบรรทัดใหม่)"
+          aria-label="ช่องพิมพ์คำถาม"></textarea>
+        <div class="input-meta">
+          <span id="counter">0 / 1000</span>
+        </div>
+      </div>
+      <button id="btn-send" class="btn btn--primary" type="submit">
+        <span class="btn-label">ส่งคำถาม</span>
+        <span class="btn-spinner" aria-hidden="true"></span>
+      </button>
+    </form>
+    <p class="composer-hint">
+      กด <kbd>Enter</kbd> เพื่อส่ง · <kbd>Shift</kbd> + <kbd>Enter</kbd> เพื่อขึ้นบรรทัดใหม่ ·
+      ข้อมูลนี้ใช้เพื่อการศึกษาเท่านั้น ไม่ใช่คำปรึกษากฎหมายรายกรณี
+    </p>
+  </section>
+
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>

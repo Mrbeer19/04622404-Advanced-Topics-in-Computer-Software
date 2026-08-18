@@ -8,3 +8,7 @@ rank_bm25>=0.2.2                # ดัชนี BM25 (keyword retrieval)
 pythainlp>=5.0                  # ตัดคำไทยให้ BM25 — ขาดตัวนี้คะแนน BM25 จะตกอย่างมาก
 numpy>=1.26
 openai>=1.40                    # ใช้เป็น client กลาง เรียกได้ทั้ง ollama / openai / gemini
+
+# เว็บถาม-ตอบ (api.py + web/) — ไม่จำเป็นถ้าใช้แค่ main.py บน terminal
+fastapi>=0.115                  # REST API หุ้ม RAGPipeline ตัวเดิม
+uvicorn[standard]>=0.30         # เซิร์ฟเวอร์ที่รัน api.py
