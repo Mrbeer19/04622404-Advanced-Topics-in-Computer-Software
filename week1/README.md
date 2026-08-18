@@ -1,4 +1,4 @@
-# Week 1 — LLM Data Pipeline (team project)
+# LAB1 — LLM Data Pipeline (team project)
 
 This folder is a `git subtree` of my feature branch in the team repository
 [Automatic28m/Advance-AI-RAG](https://github.com/Automatic28m/Advance-AI-RAG), so it holds the
