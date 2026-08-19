@@ -1,5 +1,7 @@
 # LAB3 — DL-04 RAG System Development I
 
+> Thai edition: [`README.th.md`](README.th.md)
+
 A full RAG system over a Thai online-scam awareness knowledge base: hybrid retrieval (BM25 + dense
 with RRF), cross-encoder reranking, query transformation, LLM answer generation with citations,
 conversation memory, and a retrieval evaluation suite with metrics written from scratch.
