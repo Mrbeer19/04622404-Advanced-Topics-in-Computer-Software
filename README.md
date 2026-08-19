@@ -57,9 +57,19 @@ registers (formal, conversational, slang), which is what makes the retrieval com
 The evaluation module implements Hit@k, Recall@k, Precision@k, MRR and nDCG@k from scratch and scores
 each retrieval configuration against a golden set of 54 items in four query styles. Hybrid retrieval
 beats dense-only on every variant, and by the widest margin exactly where it should: on slang queries
-MRR goes from 0.7083 to 0.9429, a 33 % gain, while hit@10 reaches a perfect 1.0000. BM25 alone
-scoring 0.9933 turned out to expose a leak in how the golden set is generated rather than a strength
-of the method. Four defects in the course code were found and fixed along the way, the most serious
-being a prompt-parsing mismatch that made the no-LLM mode refuse every question.
+MRR goes from 0.7083 to 0.9429, a 33 % gain, while hit@10 reaches a perfect 1.0000. Cross-encoder
+reranking adds another 6.3 % MRR on top of that and leaves hit@10 untouched — the exact shape the
+course notes predict, since a reranker can only reorder what retrieval already found — but it costs
+323x the latency, which is why it stays off by default. Answer generation with `llama3.1:8b` retrieves
+the correct chunk 100 % of the time and cites a source in every answer it writes.
+
+Two results came out against expectation and are reported as measured. All three query-transformation
+modes scored *below* leaving the switch off, partly because the model refused 26 % of the HyDE
+prompts — it reads "invent a plausible answer describing a scam" as a request for help committing one
+— and the refusal text then goes to the retriever as a search query. And BM25 alone scoring 0.9933
+turned out to expose a leak in how the golden set is generated rather than a strength of the method.
+Five defects in the course code were found and fixed along the way: the most serious made the no-LLM
+mode refuse every question, and the most dangerous put Thai characters in an HTTP header so that every
+LLM call failed and silently fell back to returning retrieved text as if it were a generated answer.
 
 Details, full result tables and the fix list: [`LAB3/README.md`](LAB3/README.md)
