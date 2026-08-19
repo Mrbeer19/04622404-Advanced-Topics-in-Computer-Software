@@ -42,6 +42,7 @@ EMBEDDINGS_FILE = os.path.join(OUTPUT_DIR, "embeddings.npy")
 RETRIEVAL_RESULTS_FILE = os.path.join(OUTPUT_DIR, "retrieval_results.json")
 EVAL_RETRIEVAL_FILE = os.path.join(OUTPUT_DIR, "eval_retrieval.json")
 EVAL_GENERATION_FILE = os.path.join(OUTPUT_DIR, "eval_generation.json")
+EVAL_QUERY_TRANSFORM_FILE = os.path.join(OUTPUT_DIR, "eval_query_transform.json")
 
 # ฐานข้อมูลที่ระบบใช้ค้นจริง
 FAISS_INDEX_FILE = os.path.join(VECTOR_DB_DIR, "document.index")

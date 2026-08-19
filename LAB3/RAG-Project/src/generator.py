@@ -22,11 +22,11 @@ class LLM:
 
         self.model = config.LLM_MODEL or default_model
 
-        # Ollama ไม่ต้องใช้ key 
-        api_key = os.getenv(key_name) if key_name else "ollama-ไม่ใช้-key"
+        # Ollama ไม่ต้องใช้ key — ต้องเป็น ASCII เพราะค่านี้ถูกใส่ในเฮดเดอร์ Authorization
+        api_key = os.getenv(key_name) if key_name else "ollama-no-key"
 
         self.client = OpenAI(base_url=base_url, api_key=api_key)
-        #print(f"[llm] use {config.LLM_PROVIDER} · model {self.model}")
+        print(f"[llm] use {config.LLM_PROVIDER} · model {self.model}")
 
     def chat(self, messages):
         #แล้วคืนคำตอบเป็น string
@@ -88,7 +88,7 @@ class Generator:
         try:
             answer = self.llm.chat(messages)
         except Exception as error:
-            #print(f"[llm] เรียกไม่สำเร็จ ({error}) — แสดงข้อมูลที่ค้นได้แทน")
+            print(f"[llm] เรียกไม่สำเร็จ ({error}) — แสดงข้อมูลที่ค้นได้แทน")
             answer = chunks[0]["answer"]
 
         if config.DISCLAIMER not in answer:
