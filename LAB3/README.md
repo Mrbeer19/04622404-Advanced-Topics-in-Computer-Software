@@ -105,7 +105,7 @@ All in `config.py`, all measurable through `evaluation/`:
 | Switch | Default | Effect |
 |---|---|---|
 | `USE_HYBRID` | `True` | BM25 alongside dense retrieval, merged with RRF |
-| `USE_RERANK` | `False` | cross-encoder `BAAI/bge-reranker-v2-m3` reorders the top `CANDIDATE_K`. Measured: **+6.3 % MRR at 323× the latency** |
+| `USE_RERANK` | `True` | cross-encoder `BAAI/bge-reranker-v2-m3` reorders the top `CANDIDATE_K`. Measured: **+6.3 % MRR at 323× the latency on CPU** |
 | `USE_QUERY_TRANSFORM` | `False` | LLM rewrites / expands the query before retrieval. Measured: **every mode scored below leaving it off** |
 | `USE_MEMORY` | `True` | conversation history for follow-up questions |
 | `USE_LLM` | `True` | `False` returns retrieved text instead of a generated answer |
@@ -149,9 +149,16 @@ python -m evaluation.eval_generation       # answer quality — needs an LLM
 `pythainlp` is not optional. Without it `tokenize_thai()` falls back to sliding 3-character windows
 and BM25 scores collapse, which would make the whole comparison meaningless.
 
-Answer generation defaults to Ollama at `localhost:11434` with `llama3.1:8b`. Set `LLM_PROVIDER` to
-`openai` or `gemini` in `config.py` (with the matching API key in the environment) to use a hosted
-model instead. Retrieval evaluation needs no LLM at all.
+Answer generation runs on **Gemini (`gemini-3.5-flash`)** through the OpenAI-compatible endpoint.
+Copy `.env.example` to `.env` and put the key in it:
+
+```
+GOOGLE_API_KEY=your-key-here
+```
+
+`config.py` loads that file with `python-dotenv`, and `.env` is in `.gitignore` so the key never
+reaches the repository. Set `LLM_PROVIDER` back to `ollama` for a local `llama3.1:8b` (no key
+needed) or to `openai` with `OPENAI_API_KEY`. Retrieval evaluation needs no LLM at all.
 
 ## Web interface
 
@@ -162,7 +169,7 @@ three endpoints:
 | Endpoint | What it does |
 |---|---|
 | `GET /api/health` | whether the model and index finished loading, the active LLM, and the live `config.py` switches |
-| `POST /api/ask` | `{question, session_id}` -> `{answer, sources, no_context, elapsed, timings}` through `RAGPipeline.ask()` |
+| `POST /api/ask` | `{question, session_id}` -> `{answer, sources, no_context, answered_by, model, elapsed, timings}` through `RAGPipeline.ask()` |
 | `POST /api/clear` | drops the server-side conversation memory of one session |
 
 - **Models load once.** The FastAPI `lifespan` hook builds `RAGPipeline` at startup and
@@ -174,8 +181,14 @@ three endpoints:
 - **The LLM is called server-side only.** No API key reaches the browser, and questions are capped
   at `MAX_QUESTION_CHARS = 1000`. Every error — startup failure, bad input, LLM failure — comes back
   as the same `{"error": ...}` JSON shape.
+- **Every answer says where it came from.** `answered_by` separates the four cases that all used to
+  look alike on screen: `llm` (the model wrote it from retrieved context), `llm_refused` (retrieval
+  found chunks but the model declined to answer), `no_context` (retrieval found nothing, so the
+  system answered "I don't know" instead of letting the model guess), and `fallback_context` (the
+  LLM call failed and the retrieved text is shown raw). The browser prints that, the model name, and
+  the time split — total, search, and generation — as tags under each answer.
 - **`web/` is plain HTML/CSS/JS, no build step.** Sample-question chips, the `[n]` source list under
-  each answer, elapsed time per question, and a status line fed by `/api/health`.
+  each answer, and a status line fed by `/api/health`.
 
 The switches in `config.py` apply here exactly as they do on the command line — the web interface is
 a front end for the same configuration, not a separate one.
@@ -183,9 +196,11 @@ a front end for the same configuration, not a separate one.
 ## Results
 
 Everything below was measured on one machine — Windows 11, Python 3.11.9, PyTorch on CPU
-(`torch.cuda.is_available()` is `False` here), Ollama on the GPU. The committed `config.py` is the
-default configuration: `USE_HYBRID = True`, rerank and query transform off, `USE_LLM = True`. Each
-table states which switches were changed to produce it.
+(`torch.cuda.is_available()` is `False` here), Ollama on the GPU, `llama3.1:8b` as the LLM. The
+configuration measured was `USE_HYBRID = True`, rerank and query transform off, `USE_LLM = True`,
+and each table states which switches were changed to produce it. The committed `config.py` has since
+moved on — it now runs `USE_RERANK = True` on `gemini-3.5-flash` — so the numbers below describe the
+switches, not the current default.
 
 ### Retrieval
 
@@ -226,8 +241,10 @@ Reading these numbers:
   closes out the slang variant completely, 0.9429 -> 1.0000.
 - **The reranker costs 4035.5 ms per query against hybrid's 12.5 ms — 323x slower.** It scores 20
   query-document pairs per query through a 568M-parameter cross-encoder (`BAAI/bge-reranker-v2-m3`),
-  4320 pairs in total, on CPU. That single number is why `USE_RERANK` stays `False` in the committed
-  config: it is the most accurate configuration measured here and it is unusable interactively.
+  4320 pairs in total, on CPU. It is the most accurate configuration measured here and by far the
+  slowest, so it is a deliberate trade: the committed config turns it on and accepts the wait. On
+  the Mac used for the web interface a reranked search settles around 3–5 s, with the LLM adding a
+  few seconds on top.
 - **BM25 alone scoring 0.9933 is not a result, it is a warning.** See below.
 
 A correction to the previous edition of this table: it reported hybrid at 7.9 ms/query against

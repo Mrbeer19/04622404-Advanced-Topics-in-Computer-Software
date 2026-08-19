@@ -16,7 +16,7 @@ for _s in (sys.stdout, sys.stderr):
 # 1. ลองปิดทีละตัวแล้วรัน evaluation ดูว่าคะแนนเปลี่ยนไปแค่ไหน
 
 USE_HYBRID = True            # ค้นด้วย BM25 ควบคู่กับ dense (ปิด = dense อย่างเดียว)
-USE_RERANK = False            # จัดอันดับใหม่ด้วย cross-encoder — แม่นขึ้นแต่ช้ามาก
+USE_RERANK = True            # จัดอันดับใหม่ด้วย cross-encoder — แม่นขึ้นแต่ช้ามาก
 USE_QUERY_TRANSFORM = False      # แปลงคำถามก่อนค้น — เสีย LLM เพิ่ม 1 ครั้งต่อคำถาม
 USE_MEMORY = True              # จำบทสนทนา เพื่อตอบคำถามต่อเนื่องได้
 USE_LLM = True              # False = แสดงข้อความที่ค้นได้ดิบ ๆ ไม่เรียก LLM เลย
@@ -26,6 +26,13 @@ SHOW_DEBUG = False          # True = แสดงคะแนนและเว�
 
 # 2. ที่อยู่ไฟล์
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# อ่านคีย์จากไฟล์ .env ข้าง ๆ config.py (ไฟล์นี้ไม่ถูก commit ขึ้น git)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(BASE_DIR, ".env"))
+except ImportError:
+    pass    # ไม่มี python-dotenv ก็ยังใช้ตัวแปรจาก environment ได้ตามปกติ
 DATA_DIR = os.path.join(BASE_DIR, "data")
 OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 VECTOR_DB_DIR = os.path.join(BASE_DIR, "vector_db")
@@ -68,16 +75,16 @@ QUERY_TRANSFORM_MODE = "multi_query"   # rewrite | multi_query | hyde
 MULTI_QUERY_COUNT = 3
 
 # 5. LLM
-LLM_PROVIDER = "ollama"
+LLM_PROVIDER = "gemini"   # ollama | openai | gemini
 LLM_MODEL = ""          # เว้นว่าง = ใช้ค่า default 
 LLM_TEMPERATURE = 0.2   # เหมือนค่าเทรดโฮล 
-LLM_MAX_TOKENS = 800
+LLM_MAX_TOKENS = 2000   # โมเดลตระกูล gemini 3 นับโทเคนที่ใช้คิดรวมในนี้ด้วย
 
 LLM_PROVIDERS = {
     "ollama": ("http://localhost:11434/v1", "llama3.1:8b", None),
     "openai": ("https://api.openai.com/v1", "gpt-4o-mini", "OPENAI_API_KEY"),
     "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai/",
-               "gemini-1.5-flash", "GOOGLE_API_KEY"),
+               "gemini-3.5-flash", "GOOGLE_API_KEY"),
 }
 
 

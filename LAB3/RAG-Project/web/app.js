@@ -85,6 +85,47 @@
 
   /* ---------------------------------------------------------- rendering */
 
+  // ป้ายใต้คำตอบ: ใครเป็นคนตอบ ตอบจากอะไร และใช้เวลาไปเท่าไร
+  function sourceTags(message) {
+    var model = escapeHtml(message.model || "โมเดล");
+    var count = (message.sources && message.sources.length) || 0;
+
+    switch (message.answeredBy) {
+      case "llm":
+        return tag("ok", "เขียนคำตอบโดย " + model) +
+               tag("", "อ้างอิงฐานความรู้ " + count + " รายการ");
+      case "llm_refused":
+        return tag("warn", "ไม่พบข้อมูลที่ตอบคำถามนี้ในฐานความรู้") +
+               tag("", model + " เลือกไม่เดาคำตอบ · ค้นมาให้ " + count + " รายการ");
+      case "no_context":
+        return tag("warn", "ค้นไม่พบเอกสารที่เกี่ยวข้อง") +
+               tag("", "ระบบตอบว่าไม่รู้ ไม่ได้ส่งให้ " + model + " เดา");
+      case "fallback_context":
+        return tag("warn", "เรียก " + model + " ไม่สำเร็จ") +
+               tag("", "ข้อความนี้มาจากฐานความรู้โดยตรง ไม่ได้ผ่านการเรียบเรียง");
+      case "no_llm":
+        return tag("", "โหมดไม่ใช้ LLM · ข้อความจากฐานความรู้โดยตรง");
+      default:
+        return count ? tag("", "อ้างอิงฐานความรู้ " + count + " รายการ") : "";
+    }
+  }
+
+  function timeTag(message) {
+    if (!message.elapsed) return "";
+
+    var timings = message.timings || {};
+    var steps = [];
+    if (timings["ค้นหา"] != null) steps.push("ค้นหา " + timings["ค้นหา"] + " วิ");
+    if (timings["เขียนคำตอบ"] != null) steps.push("เขียนคำตอบ " + timings["เขียนคำตอบ"] + " วิ");
+
+    return tag("", "ใช้เวลา " + message.elapsed + " วินาที" +
+                   (steps.length ? " (" + steps.join(" · ") + ")" : ""));
+  }
+
+  function tag(kind, text) {
+    return '<span class="tag' + (kind ? " tag--" + kind : "") + '">' + escapeHtml(text) + "</span>";
+  }
+
   function messageNode(message, index) {
     var wrap = document.createElement("div");
     var isUser = message.role === "user";
@@ -103,6 +144,12 @@
           (isUser || isError ? escapeHtml(message.text) : formatAnswer(message.text)) +
         "</div>";
 
+    // ที่มาของคำตอบ + เวลาที่ใช้
+    if (!isUser && !isError) {
+      var tags = sourceTags(message) + timeTag(message);
+      if (tags) html += '<div class="msg__meta">' + tags + "</div>";
+    }
+
     // แหล่งอ้างอิงของคำตอบ
     if (!isUser && !isError && message.sources && message.sources.length) {
       html += '<details class="sources"><summary>แหล่งอ้างอิง ' +
@@ -119,9 +166,6 @@
     html += '<div class="msg__tools">';
     if (!isUser) {
       html += '<button class="tool-btn" type="button" data-copy="' + index + '">คัดลอกคำตอบ</button>';
-    }
-    if (message.elapsed) {
-      html += '<span class="msg__time">ใช้เวลา ' + escapeHtml(message.elapsed) + " วินาที</span>";
     }
     html += '<span class="msg__time">' + escapeHtml(message.time || "") + "</span>";
     html += "</div></div>";
@@ -165,6 +209,9 @@
     if (extra) {
       if (extra.sources) message.sources = extra.sources;
       if (extra.elapsed) message.elapsed = extra.elapsed;
+      if (extra.timings) message.timings = extra.timings;
+      if (extra.answeredBy) message.answeredBy = extra.answeredBy;
+      if (extra.model) message.model = extra.model;
     }
     messages.push(message);
     saveState();
@@ -271,7 +318,13 @@
           try { localStorage.setItem(STORE_SID, sessionId); } catch (error) { /* ไม่สำคัญ */ }
         }
         setLoading(false);
-        push("ai", data.answer, { sources: data.sources, elapsed: data.elapsed });
+        push("ai", data.answer, {
+          sources: data.sources,
+          elapsed: data.elapsed,
+          timings: data.timings,
+          answeredBy: data.answered_by,
+          model: data.model
+        });
       })
       .catch(function (error) {
         setLoading(false);

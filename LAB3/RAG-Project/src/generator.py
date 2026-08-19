@@ -17,6 +17,8 @@ from src.prompt_templates import CONTEXT_HEADER, QUESTION_HEADER, build_messages
 class LLM:
     """เรียก LLM ผ่านไลบรารี openai (ใช้ได้ทั้ง ollama / openai / gemini)"""
 
+    kind = "llm"
+
     def __init__(self):
         base_url, default_model, key_name = config.LLM_PROVIDERS[config.LLM_PROVIDER]
 
@@ -41,6 +43,7 @@ class LLM:
 
 class NoLLM:
 
+    kind = "no_llm"
     model = "don't use LLM"
 
     def chat(self, messages):
@@ -81,15 +84,23 @@ class Generator:
                 "answer": config.NO_CONTEXT_MESSAGE,
                 "sources": [],
                 "no_context": True,
+                "answered_by": "no_context",     # ค้นไม่เจอเลย ไม่ได้ให้ LLM เดา
+                "model": getattr(self.llm, "model", ""),
             }
 
         messages = build_messages(question, chunks, history)
 
+        answered_by = getattr(self.llm, "kind", "llm")
         try:
             answer = self.llm.chat(messages)
         except Exception as error:
             print(f"[llm] เรียกไม่สำเร็จ ({error}) — แสดงข้อมูลที่ค้นได้แทน")
             answer = chunks[0]["answer"]
+            answered_by = "fallback_context"     # เรียกโมเดลไม่สำเร็จ จึงคืนข้อความที่ค้นได้
+
+        # ค้นเจอ แต่โมเดลบอกเองว่าตอบไม่ได้ — คนละกรณีกับค้นไม่เจอ
+        if answered_by == "llm" and answer.strip().startswith(config.NO_CONTEXT_MESSAGE):
+            answered_by = "llm_refused"
 
         if config.DISCLAIMER not in answer:
             answer = f"{answer}\n\n{config.DISCLAIMER}"
@@ -98,6 +109,8 @@ class Generator:
             "answer": answer.strip(),
             "sources": self.build_sources(chunks),
             "no_context": False,
+            "answered_by": answered_by,
+            "model": getattr(self.llm, "model", ""),
         }
 
     def build_sources(self, chunks):    #  สร้างรายการแหล่งอ้างอิง ให้เลข [1] [2] ตรงกับที่อยู่ใน prompt

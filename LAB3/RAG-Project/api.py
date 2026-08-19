@@ -115,7 +115,7 @@ def health():
     return {
         "ready": state["ready"],
         "error": state["error"],
-        "model": config.LLM_PROVIDERS[config.LLM_PROVIDER][1] if config.USE_LLM else "ไม่ใช้ LLM",
+        "model": (config.LLM_MODEL or config.LLM_PROVIDERS[config.LLM_PROVIDER][1]) if config.USE_LLM else "ไม่ใช้ LLM",
         "settings": {
             "hybrid": config.USE_HYBRID,
             "rerank": config.USE_RERANK,
@@ -167,6 +167,8 @@ def ask(payload: AskRequest = Body(...)):
         "answer": answer,
         "sources": result.get("sources") or [],
         "no_context": bool(result.get("no_context")),
+        "answered_by": result.get("answered_by") or "",
+        "model": result.get("model") or "",
         "session_id": session_id,
         "elapsed": round(time.time() - started, 2),
         "timings": result.get("timings") or {},
