@@ -59,9 +59,11 @@ LAB3/
     ├── labs/                        lab01–lab07, the step-by-step core pipeline
     ├── src/                         reusable modules (see the table above)
     ├── evaluation/                  metrics, golden set builder, three eval scripts
+    ├── web/                         browser UI — index.html, app.js, style.css, bot avatar
     ├── config.py                    every switch and path
     ├── build_index.py               builds FAISS + BM25 + metadata in one run
     ├── main.py                      interactive question answering
+    ├── api.py                       FastAPI server putting the pipeline behind HTTP
     └── requirements.txt
 ```
 
@@ -135,6 +137,7 @@ pip install -r requirements.txt
 
 python build_index.py                      # FAISS + BM25 + metadata, ~18 s
 python main.py                             # ask questions interactively
+python api.py                              # web interface at http://127.0.0.1:8000
 
 python -m evaluation.metrics               # self-test of the metric formulas
 python -m evaluation.build_golden_set      # regenerate the evaluation set
@@ -149,6 +152,33 @@ and BM25 scores collapse, which would make the whole comparison meaningless.
 Answer generation defaults to Ollama at `localhost:11434` with `llama3.1:8b`. Set `LLM_PROVIDER` to
 `openai` or `gemini` in `config.py` (with the matching API key in the environment) to use a hosted
 model instead. Retrieval evaluation needs no LLM at all.
+
+## Web interface
+
+`api.py` puts the pipeline that `main.py` already uses behind HTTP — there is no second RAG
+implementation and no LLM call from the browser. FastAPI serves `web/` as static files and answers
+three endpoints:
+
+| Endpoint | What it does |
+|---|---|
+| `GET /api/health` | whether the model and index finished loading, the active LLM, and the live `config.py` switches |
+| `POST /api/ask` | `{question, session_id}` -> `{answer, sources, no_context, elapsed, timings}` through `RAGPipeline.ask()` |
+| `POST /api/clear` | drops the server-side conversation memory of one session |
+
+- **Models load once.** The FastAPI `lifespan` hook builds `RAGPipeline` at startup and
+  `index_meta.warn_if_stale()` runs there, so a request never pays for loading and a stale index is
+  reported before the first question.
+- **One memory per browser, not per server.** `RAGPipeline` owns a single `ConversationMemory`, so
+  the server keeps one per `session_id` and swaps it in under a lock. The session table is an LRU
+  capped at `MAX_SESSIONS = 200`, so memory cannot grow without limit.
+- **The LLM is called server-side only.** No API key reaches the browser, and questions are capped
+  at `MAX_QUESTION_CHARS = 1000`. Every error — startup failure, bad input, LLM failure — comes back
+  as the same `{"error": ...}` JSON shape.
+- **`web/` is plain HTML/CSS/JS, no build step.** Sample-question chips, the `[n]` source list under
+  each answer, elapsed time per question, and a status line fed by `/api/health`.
+
+The switches in `config.py` apply here exactly as they do on the command line — the web interface is
+a front end for the same configuration, not a separate one.
 
 ## Results
 
