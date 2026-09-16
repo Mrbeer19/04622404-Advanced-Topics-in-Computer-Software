@@ -22,6 +22,7 @@ The course follows the official course description and extends it with modern AI
 | 1 | LLM data pipeline (team project) | Chunking, stage 3 of the pipeline | [`LAB1/`](LAB1/) |
 | 2 | DL-03 LLM Retrieval System (RAG) | Whole project: chunking, embeddings, FAISS vector database, retrieval | [`LAB2/`](LAB2/) |
 | 3 | DL-04 RAG System Development I | Whole project: hybrid retrieval, reranking, generation, evaluation | [`LAB3/`](LAB3/) |
+| 4 | DL-05 RAG System Development II | Whole project: the ten problems found across LAB1–LAB3, reproduced and fixed | [`LAB4/`](LAB4/) |
 
 ### LAB 1 — Chunking (LLM data pipeline)
 
@@ -73,3 +74,34 @@ mode refuse every question, and the most dangerous put Thai characters in an HTT
 LLM call failed and silently fell back to returning retrieved text as if it were a generated answer.
 
 Details, full result tables and the fix list: [`LAB3/README.md`](LAB3/README.md)
+
+### LAB 4 — DL-05 RAG System Development II
+
+The ten problems that came out of building the three labs above, each one reproduced as runnable code
+against the artefacts those labs actually produced — not simulated. Where the course template
+demonstrates hallucination with a `bad_generate()` that returns a hard-coded lie, this folder
+reproduces the defect that shipped instead: a placeholder API key containing Thai characters, which
+the HTTP layer encodes as ASCII, so every LLM call raised before it left the machine and a blanket
+`except` returned retrieved text as if it were generated — with the warning commented out. A
+hallucination is detectable; that was not.
+
+Each module states where the problem came from, reproduces the broken behaviour and the fixed one
+side by side, and reports the measurement that settled it, loaded from the `eval_*.json` files LAB3
+committed rather than restated from memory. Standard library only — no LLM, no GPU, no downloads.
+
+Three that are worth reading on their own. **BM25 scoring 0.9933 MRR is a fact about the benchmark,
+not about BM25**: every golden-set query variant is built from the target question by string
+operations, and measurement here puts the character overlap at 92–100 %, so the test is one of
+lightly edited copies. **A safety-tuned model will not write a scam**: 26 % of HyDE prompts came back
+as an apology, and since nothing distinguished an apology from an answer, the apology went to the
+retriever as the search query. **Two identical runs of the query-transform ablation differed by 4.6×
+the effect being measured**, which is why only the direction of that result is claimed.
+
+Running the checks also turned up two defects nobody was looking for: five near-duplicate pairs in
+`scam_q_a.txt`, where a slang variant was copied from the conversational one and edited by a word
+rather than rewritten, and thirteen chunks whose text is a 54–104 character fragment with the question
+prefix cut off by the splitter. Both are reported rather than patched, because changing the data or
+the splitter invalidates the committed index and every number in `outputs/` — which is the failure
+mode problem 05 is about.
+
+Details and the full problem list: [`LAB4/README.md`](LAB4/README.md)

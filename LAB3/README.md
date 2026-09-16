@@ -314,10 +314,12 @@ ablation was run twice with identical code at `LLM_TEMPERATURE = 0.2`:
 | multi_query | 0.8811 | 0.8713 |
 | hyde | 0.8186 | 0.8881 |
 
-`none` is deterministic and repeated exactly; every LLM mode moved, `hyde` by 8.5 points — enough
-that one run of 68 queries cannot separate `hyde` from `multi_query`. What held across both runs is
-the only claim made here: all three modes landed below `none`. The committed numbers are run 2,
-whose transformed queries are all saved in `outputs/eval_query_transform.json`.
+`none` is deterministic and repeated exactly; every LLM mode moved — `rewrite` by 7.7 points and
+`hyde` by 7.0, against a `hyde`-to-`multi_query` gap of 1.7. The run-to-run spread is over four
+times the difference being measured, so one run of 68 queries cannot separate those two modes at
+all. What held across both runs is the only claim made here: all three modes landed below `none`.
+The committed numbers are run 2, whose transformed queries are all saved in
+`outputs/eval_query_transform.json`.
 
 ### Generation
 
@@ -388,7 +390,7 @@ coverage:
 |---|---|
 | `correctness` and `relevance` are token-overlap heuristics | they cannot tell a differently-worded correct answer from a wrong one. An LLM judge or a human reader would be needed to grade answer quality properly |
 | generation was scored on 20 items, one variant, one run | enough to catch a broken pipeline, not enough to compare two prompts or two models |
-| the query-transform ablation moved by up to 8.5 MRR points between two identical runs | single-run LLM numbers carry more noise than most of the differences being measured |
+| the query-transform ablation moved by up to 7.7 MRR points between two identical runs | single-run LLM numbers carry more noise than most of the differences being measured |
 | only `llama3.1:8b` was tested | the 26 % HyDE refusal rate is a property of this model on this subject, not of HyDE |
 
 ## Notes
