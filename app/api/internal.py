@@ -7,6 +7,7 @@ places, context) arrive with their adapters in Phases 3-6.
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from fastapi import APIRouter, Request, Response
@@ -18,11 +19,18 @@ from app.adapters.open_meteo_geocoding import GeocodeQuery
 from app.adapters.open_meteo_weather import CoordinateSample, WeatherQuery
 from app.api.deps import InternalAuth
 from app.api.envelope import success
-from app.api.schemas import GeocodeSearchRequest, WeatherQueryRequest
+from app.api.schemas import (
+    DisasterQueryRequest,
+    GeocodeSearchRequest,
+    WeatherQueryRequest,
+)
 from app.domain.enums import HealthState, ProviderKind, ProviderStatus
+from app.domain.errors import ProviderError, ProviderErrorCode
+from app.domain.queries import DisasterQuery
 from app.observability.logging import get_logger
 from app.observability.metrics import REGISTRY
 from app.providers.registry import ResolvedRegistry
+from app.services.dedup import find_duplicate_groups
 from app.settings import get_settings
 
 log = get_logger(__name__)
@@ -248,4 +256,104 @@ async def weather_query(
             "requested_samples": len(body.samples),
             "attribution": registry.attributions([adapter.provider_id]),
         }
+    )
+
+
+@router.post("/internal/v1/disasters/query")
+async def disasters_query(
+    request: Request, body: DisasterQueryRequest, _: InternalAuth
+) -> dict[str, Any]:
+    """Hazard events from every configured disaster source.
+
+    The sources are complementary, not interchangeable: the same earthquake
+    appears in more than one of them, and the plan forbids dropping a duplicate
+    here. Everything each source returned is emitted with its own provenance,
+    and module 05 resolves them.
+
+    If one source fails the answer is still returned, with that source named in
+    `meta.degraded_services`. If *every* source fails the request fails - an
+    empty list would read as "no hazards", which is the one answer this module
+    must never invent.
+    """
+    adapters: AdapterRegistry = request.app.state.adapters
+    registry: ResolvedRegistry = request.app.state.registry
+
+    available = adapters.all_for_kind(ProviderKind.DISASTER)
+    if not available:
+        raise ProviderError(
+            ProviderErrorCode.OUTSIDE_COVERAGE,
+            provider_id=str(ProviderKind.DISASTER),
+            message=adapters.blocked_reason(ProviderKind.DISASTER),
+        )
+
+    query = DisasterQuery(
+        bbox=body.bbox,
+        start=body.start,
+        end=body.end,
+        event_types=list(body.event_types),
+        min_magnitude=body.min_magnitude,
+    )
+
+    events: list[Any] = []
+    answered: list[str] = []
+    degraded: list[str] = []
+    not_applicable: list[str] = []
+    last_error: ProviderError | None = None
+
+    # Fan out in parallel (shared context § 7): the sources are independent, so
+    # the total cost should be the slowest of them, not the sum. Sequentially
+    # this endpoint took 12s for a global query and 20s when one source timed
+    # out, because every later source waited out the earlier one's deadline.
+    results = await asyncio.gather(
+        *(adapter.query(query) for adapter in available), return_exceptions=True
+    )
+
+    for adapter, result in zip(available, results, strict=True):
+        if isinstance(result, ProviderError):
+            last_error = result
+            if result.code is ProviderErrorCode.OUTSIDE_COVERAGE:
+                # "This source publishes nothing about that" is not a failure.
+                # Counting it as degraded would mark USGS degraded on every
+                # flood query, and a field that is always set stops carrying
+                # information.
+                not_applicable.append(adapter.provider_id)
+            else:
+                degraded.append(adapter.provider_id)
+                log.warning(
+                    "disaster_source_failed",
+                    provider=adapter.provider_id,
+                    error_code=str(result.code),
+                )
+        elif isinstance(result, BaseException):
+            # Not a provider failure - a bug, or the caller cancelling. Neither
+            # should be quietly recorded as "that source is a bit degraded".
+            raise result
+        else:
+            events.extend(result)
+            answered.append(adapter.provider_id)
+
+    if not answered:
+        assert last_error is not None
+        # Every source failing and every source being irrelevant are different
+        # answers: one is "we could not find out", the other is "nobody
+        # publishes this". `last_error` already distinguishes them.
+        raise last_error
+
+    events.sort(key=lambda event: event.effective_at, reverse=True)
+
+    # Grouped, never merged: every event is still emitted below. Module 05 owns
+    # the decision about which record of a duplicate pair to believe, and it
+    # cannot make that decision about records it never received.
+    duplicate_groups = find_duplicate_groups(events)
+
+    return success(
+        {
+            "events": [event.model_dump(mode="json") for event in events],
+            "duplicate_groups": [group.as_dict() for group in duplicate_groups],
+            "sources": answered,
+            # Named so a consumer can tell "nobody asked" from "nobody answered".
+            "sources_not_covering_query": not_applicable,
+            "attribution": registry.attributions(answered),
+        },
+        degraded=degraded,
     )

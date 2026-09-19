@@ -87,7 +87,7 @@ Required canonical fields: `event_id`, `event_type`, `title`, `description`,
 `severity`, `geometry`, `effective_at`, `ends_at`, `instruction`, `official`,
 `quality`, `source`.
 
-### 3.1 USGS — fixture `usgs/significant_month.json`
+### 3.1 USGS — fixture `usgs/significant_month.json` — ✅ implemented (Phase 3)
 
 | Canonical | Provider | Note |
 | --- | --- | --- |
@@ -108,7 +108,15 @@ Required canonical fields: `event_id`, `event_type`, `title`, `description`,
 `properties.alert` (PAGER green/yellow/orange/red) is impact, not magnitude, and is
 frequently `null`. Do not overwrite `severity` with it — **open question Q3**.
 
-### 3.2 GDACS — fixture `gdacs/eventlist_eq.json`
+Implemented as agreed: `severity` stays `UNKNOWN`, and `mag`, `magType`, `alert`,
+depth and `tsunami` are carried through in typed fields on `DisasterEvent` so
+modules 05/06 have the evidence to decide with. Two further traps found while
+implementing: the summary feeds accept **no bbox and no time parameter**, so
+filtering is client-side and recorded as `OUTSIDE_COVERAGE` with a note; and a
+bbox that crosses the antimeridian is the union of two longitude spans, not one
+range — treating it as `min <= x <= max` silently hides every Pacific hazard.
+
+### 3.2 GDACS — fixture `gdacs/eventlist_eq.json` — ✅ implemented (Phase 3)
 
 | Canonical | Provider (`features[].properties.*`) | Note |
 | --- | --- | --- |
@@ -130,7 +138,16 @@ Silently parsing them as local time shifts every GDACS event by the host offset.
 `alertlevel` is `Green|Orange|Red` — an alert scale, not the project `Severity`
 enum. It must not be cast directly.
 
-### 3.3 NASA EONET — fixture `eonet/events.json`
+Three further traps found while implementing, none of them in the documentation:
+
+- **`iscurrent` and `istemporary` are strings**, `"false"` not `false`. `bool("false")` is `True`, which is exactly how a closed event gets presented as ongoing.
+- **`eventname` is empty on every record** in the captured feed; `name` is the field that carries a title. The adapter falls back through `eventname` → `name` → `description`.
+- **Depth lives inside the free-text `severitytext`** (`"Magnitude 5M, Depth:10km"`) and nowhere structured. It is not parsed out — a regex over prose is not a foundation for a safety decision — and the text is passed through in `quality.notes` for a human to read.
+
+`glide` is an international disaster identifier shared across agencies, so it is
+the strongest cross-source dedup key GDACS offers.
+
+### 3.3 NASA EONET — fixture `eonet/events.json` — ✅ implemented (Phase 3)
 
 | Canonical | Provider (`events[].*`) | Note |
 | --- | --- | --- |
@@ -144,17 +161,48 @@ enum. It must not be cast directly.
 | `official` | `true` | authority `OFFICIAL` |
 | `source.source_url` | `sources[0].url` | may point to a third-party incident system (e.g. IRWIN) |
 
-`geometry[].magnitudeValue` / `magnitudeUnit` are per-category (acres, NM, …) and
-are **not** comparable across event types.
+`geometry[].magnitudeValue` / `magnitudeUnit` are per-category (acres for a
+wildfire, knots for a storm) and are **not** comparable across event types. Every
+record says which scale it is on, in `quality.notes`.
 
-### 3.4 Cross-source dedup
+The mapping above gave `effective_at` ← `geometry[0].date`, which is right — the
+first observation is when the event began. But the **location must come from the
+latest entry, not the first**. Typhoon Dujuan in the captured feed has 11 track
+points whose first and last are **1,480 km apart**, with intensity rising from 35
+to 65 kts. Reading `geometry[0].coordinates` reports where the storm was three
+days ago at the strength it had then, and nothing about the answer looks wrong.
+The adapter sorts the track by date rather than trusting the feed's order.
 
-Phase 3 concern, recorded here because it constrains the schema: the same
-earthquake appears in all three feeds. The plan forbids deleting conflicts.
-Dedup keys available today — USGS `properties.ids`, GDACS `glide`, EONET
-`sources[].id` — are not sufficient on their own, so the intended handoff is: module
-04 emits **all** records with an authority-priority hint, and module 05 resolves.
-**Open question Q4.**
+A geometry entry may also be a **Polygon**, which is reduced to the centroid of
+its outer ring and flagged `INFERRED` — dropping the event would lose a real
+hazard, and taking the first vertex would place it on an edge.
+
+### 3.4 Cross-source dedup — ✅ implemented (Phase 3)
+
+The same earthquake appears in all three feeds. The plan forbids deleting
+conflicts, so nothing is merged or dropped: `POST /internal/v1/disasters/query`
+returns every event, plus a `duplicate_groups` annotation beside them.
+
+A group is formed when either holds:
+
+- **`shared_identifier`** — one event's record id or cross-reference appears in another's (USGS `properties.ids`, GDACS `glide`, EONET `sources[].id`). Strong evidence.
+- **`proximity`** — same `event_type`, epicentres within 100 km, start times within 30 minutes. A hint, not a conclusion: two genuine quakes in a swarm can satisfy it, which is why the basis is reported.
+
+`cross_reference_ids` holds **only values that name one specific event** —
+USGS's cross-network ids, GDACS's GLIDE. The agency that reported an event
+(`reporting_networks`) and the episode index within it (`episode_id`) are
+separate fields, because they name a *category*, not an event. Review of PR #10
+caught what happens otherwise: `network:JTWC` appeared in 297 of 568 live
+events, and union-find chained seventeen storms months and hemispheres apart
+into one group labelled `shared_identifier`.
+
+Each group carries its members' `providers` and `authorities` so module 05 can
+prioritise. Module 04 does not rank them. Two records from the *same* source are
+never grouped — an aftershock sequence is that source's own catalogue, not a set
+of duplicates.
+
+**Q4 is answered by this implementation**; confirm it matches what module 05
+expects to receive.
 
 ---
 

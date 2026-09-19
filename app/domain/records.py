@@ -15,7 +15,7 @@ from typing import Literal, Self
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.domain.canonical import DataQuality, SourceProvenance
-from app.domain.enums import Severity
+from app.domain.enums import EventType, Severity
 
 
 class GeoPoint(BaseModel):
@@ -122,3 +122,47 @@ class WeatherForecastPoint(BaseModel):
     # from the time the traveller is actually expected at this point.
     eta_offset_seconds: int | None = None
     sample_id: str | None = None
+
+
+class DisasterEvent(BaseModel):
+    """Contract § 3.7.
+
+    The optional measurement fields below are an extension, agreed in
+    `docs/canonical-field-mapping.md`: until Q2/Q3 are answered, `severity`
+    stays UNKNOWN and the provider's own numbers are carried through in typed
+    fields so modules 05/06 can decide what they mean. Discarding them and
+    emitting only UNKNOWN would throw away the evidence the decision needs.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    event_id: str
+    event_type: EventType
+    title: str
+    description: str | None = None
+    severity: Severity = Severity.UNKNOWN
+    geometry: GeoPoint
+    effective_at: datetime
+    ends_at: datetime | None = None
+    instruction: str | None = None
+    official: bool
+    quality: DataQuality
+    source: SourceProvenance
+
+    # --- provider measurements, carried through rather than interpreted ---
+    magnitude: float | None = None
+    magnitude_unit: str | None = None
+    depth_km: float | None = None
+    # PAGER green/yellow/orange/red, GDACS Green/Orange/Red - an impact alert
+    # scale, deliberately NOT cast to Severity (open question Q3).
+    alert_level: str | None = None
+    tsunami: bool | None = None
+    # Identifiers **of this event** in other networks - a USGS cross-network id,
+    # a GLIDE number. Module 05 matches on these, so anything in here that does
+    # not identify one specific event will make it merge unrelated hazards.
+    cross_reference_ids: list[str] = Field(default_factory=list)
+    # Who reported it, which is a different question from which event it is.
+    # A network name is shared by every event that network publishes.
+    reporting_networks: list[str] = Field(default_factory=list)
+    # One provider event can have many episodes (a storm's successive updates).
+    episode_id: str | None = None

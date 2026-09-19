@@ -18,7 +18,10 @@ provenance, cache, quota
 | 0 — Provider governance | ✅ |
 | 1 — Service foundation | ✅ |
 | 2 — Geocoding + weather | ✅ |
-| 3–7 | ⬜ ยังไม่เริ่ม |
+| 3 — Disaster sources | ✅ USGS + GDACS + EONET + dedup + health probe |
+| 4 — Routing | ⛔ ติด `ORS_API_KEY` |
+| 5 — Transit/flight | ⛔ ติด credential + Lead เลือก region |
+| 6–7 | ⬜ ยังไม่เริ่ม |
 
 ## Endpoint
 
@@ -28,12 +31,24 @@ provenance, cache, quota
 | GET | `/internal/v1/providers/health` | ✅ |
 | POST | `/internal/v1/geocode/search` | ✅ |
 | POST | `/internal/v1/weather/query` | ✅ |
-| POST | `/internal/v1/disasters/query` | ⬜ Phase 3 |
+| POST | `/internal/v1/disasters/query` | ✅ (USGS + GDACS + EONET) |
 | POST | `/internal/v1/routes/query` · `/places/nearby` | ⬜ Phase 4 (ไม่มี key) |
 | POST | `/internal/v1/transport/query` | ⬜ Phase 5 |
 | POST | `/internal/v1/context/query` | ⬜ Phase 6 |
 
 ทุก endpoint ใต้ `/internal/v1` ต้องมี `Authorization: Bearer $INTERNAL_SERVICE_TOKEN`
+
+## Health probe
+
+ทุก `PROVIDER_HEALTH_PROBE_SECONDS` วินาที (ค่าเริ่มต้น 300, ใส่ `0` เพื่อปิด) service จะ
+ยิง `health.url` ของ provider ที่ `ACTIVE` ทุกเจ้าแล้วบันทึกผลลง `provider.health`
+
+ถ้าไม่มี probe นี้ `provider.health` จะมีข้อมูลก็ต่อเมื่อมี request จริงไปถึง provider —
+provider ที่ถูกเสิร์ฟจาก cache ล้วนจะค้างที่ `UNKNOWN` ตลอด และเจ้าที่ล่มระหว่าง request
+จะถือค่าเดิมที่ยังดีอยู่ไว้จนกว่าจะมีคนเรียก
+
+provider ที่ถูกบล็อก (ไม่มี credential / Lead ยังไม่อนุมัติ) **ไม่ถูก probe** — สถานะของมัน
+รู้จาก config อยู่แล้ว และการยิงไป provider ที่ยังไม่ได้รับอนุมัติคือสิ่งที่ registry gate มีไว้กัน
 
 ## เอกสาร
 
@@ -52,9 +67,9 @@ provenance, cache, quota
 | --- | --- | --- |
 | Geocoding | Open-Meteo Geocoding | ✅ `ACTIVE` |
 | Weather | Open-Meteo Forecast | ✅ `ACTIVE` |
-| Earthquake | USGS | ✅ `ACTIVE` |
-| Multi-hazard | GDACS | ✅ `ACTIVE` |
-| Natural events | NASA EONET v3 | ✅ `ACTIVE` |
+| Earthquake | USGS | ✅ `ACTIVE` + adapter |
+| Multi-hazard | GDACS | ✅ `ACTIVE` + adapter |
+| Natural events | NASA EONET v3 | ✅ `ACTIVE` + adapter |
 | Road route | openrouteservice | ❌ ไม่มี `ORS_API_KEY` |
 | Emergency POI | openrouteservice POIs | ❌ ไม่มี `ORS_API_KEY` |
 | Flight | Amadeus production | ❌ ไม่มี credential |
