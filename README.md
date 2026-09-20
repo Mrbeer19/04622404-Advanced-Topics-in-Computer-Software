@@ -13,7 +13,8 @@ The course follows the official course description and extends it with modern AI
 - Computer Engineering Department, Engineering Faculty, RMUTT
 
 ## Team Repository
-- Please check out this repository for team project https://github.com/Automatic28m/Advance-AI-RAG
+- LAB 1 — LLM data pipeline: https://github.com/Automatic28m/Advance-AI-RAG
+- LAB 5 — Travel safety assistant (8-person build): https://github.com/PROxTAE/travel-safety-ai
 
 ## Course Work
 
@@ -23,6 +24,7 @@ The course follows the official course description and extends it with modern AI
 | 2 | DL-03 LLM Retrieval System (RAG) | Whole project: chunking, embeddings, FAISS vector database, retrieval | [`LAB2/`](LAB2/) |
 | 3 | DL-04 RAG System Development I | Whole project: hybrid retrieval, reranking, generation, evaluation | [`LAB3/`](LAB3/) |
 | 4 | DL-05 RAG System Development II | Whole project: the ten problems found across LAB1–LAB3, reproduced and fixed | [`LAB4/`](LAB4/) |
+| 5 | DL-07 Agentic AI System II (team project) | Module 04 External Data Services: every provider the system reads from | [`LAB5/`](LAB5/) |
 
 ### LAB 1 — Chunking (LLM data pipeline)
 
@@ -105,3 +107,51 @@ the splitter invalidates the committed index and every number in `outputs/` — 
 mode problem 05 is about.
 
 Details and the full problem list: [`LAB4/README.md`](LAB4/README.md)
+
+### LAB 5 — DL-07 Agentic AI System II
+
+Module 04 of an eight-person build,
+[PROxTAE/travel-safety-ai](https://github.com/PROxTAE/travel-safety-ai): a travel safety
+assistant that answers questions about a journey from live weather, hazard, routing and
+transit data. This module is the one that talks to the outside world — every fact the
+other seven modules reason about enters the system through it, so nothing downstream can
+be more truthful than what it hands over.
+
+Eight endpoints over nine registered providers: Open-Meteo geocoding and forecast, USGS,
+GDACS and NASA EONET for hazards, openrouteservice for road routes and emergency places,
+and a GTFS-Realtime transit feed — plus a combined endpoint that fans out to all of them
+in parallel under one deadline and reports what each one managed to answer. All eight
+phases of the module plan are delivered and merged, with 645 tests and 28 canaries that
+call the real providers.
+
+The module is built around one rule: **it never decides that anything is safe.**
+`severity` is UNKNOWN on every hazard and `risk_level` is UNKNOWN on every route — not
+because the information is missing, since the provider's own numbers are all carried
+through, but because turning a magnitude into a danger level is a judgement that belongs
+to a later module. An empty list always means "nothing was reported" and never "we could
+not find out"; when every hazard source times out the request fails with an error code,
+because `events: []` reads as *no hazards near you*.
+
+Five defects worth reading about, each of which produced output that looked completely
+healthy. **A GTFS realtime feed and its own timetable use different trip ids** — joining
+them the obvious way matched zero of sixty-seven live trips and returned sixty-six
+valid-looking records that all said UNKNOWN, with a 200 status. **GTFS clock times are
+local to the agency**, so reading a New York timetable as UTC made every train exactly
+250 minutes late. **Freshness was measuring the age of the earthquake rather than the
+age of the data**, which marked 268 of 268 events STALE and none FRESH — and the entire
+346-test suite passed while that was true, because nothing asserted what the field
+*meant*, only that it was populated. **`official` was true on every record**, including
+a magnitude -0.48 earthquake nobody can feel. And **a plausible-looking category id**
+answered a "nearest hospital" search with a pub 250 m away.
+
+Two findings changed the team's shared contract rather than this module. The schema
+required every route to carry a risk assessment, which the producer cannot have made —
+the only way to satisfy it was to assert that a route across a closed bridge was fine.
+And it required every emergency place to have a name, while two of nineteen real
+hospitals near Victory Monument have none in OpenStreetMap, one of them 335 m away and
+nearer than several that do; the choice it left was to hide the closest hospital or
+invent a label. Both are nullable now, the second with a conditional rule so that
+"not yet assessed" cannot be read as "checked, and fine".
+
+Details, the full acceptance checklist and all seventeen known limitations:
+[`LAB5/README.md`](LAB5/README.md)
