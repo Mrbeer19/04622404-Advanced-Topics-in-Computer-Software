@@ -77,8 +77,10 @@ true, because nothing asserted what the field *meant* — only that it was popul
 
 **`official` was true on every single record.** It meant "a government body recorded
 this", which all three hazard sources satisfy, so a magnitude **-0.48** earthquake
-nobody can feel was `official: true`. It now means "a warning has actually been
-issued" and returns 96 of 512.
+nobody can feel was `official: true` — and the project's own acceptance rules make
+"official closure or high alert" force an AVOID decision **over** both the language
+model and the risk score, so everything was feeding the strongest shortcut in the
+system. It now means "a warning has actually been issued" and returns 96 of 512.
 
 **A plausible-looking category id returned the wrong kind of place.** A "nearest
 hospital" search came back with a pub 250 m away. The ids were then read from the

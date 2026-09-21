@@ -141,7 +141,9 @@ local to the agency**, so reading a New York timetable as UTC made every train e
 age of the data**, which marked 268 of 268 events STALE and none FRESH — and the entire
 346-test suite passed while that was true, because nothing asserted what the field
 *meant*, only that it was populated. **`official` was true on every record**, including
-a magnitude -0.48 earthquake nobody can feel. And **a plausible-looking category id**
+a magnitude -0.48 earthquake nobody can feel — while the project's acceptance rules
+use that same field to force an AVOID decision over both the language model and the
+risk score. And **a plausible-looking category id**
 answered a "nearest hospital" search with a pub 250 m away.
 
 Two findings changed the team's shared contract rather than this module. The schema
