@@ -1,5 +1,8 @@
 # LAB 5 — DL-07 Agentic AI System II
 
+**ประภากรณ์ ภิธรรมมา · Prapakorn Phithamma · 116730462033-5**
+Computer Engineering Department, Engineering Faculty, RMUTT
+
 Module 04 (**External Data Services**) of an eight-person team build:
 [PROxTAE/travel-safety-ai](https://github.com/PROxTAE/travel-safety-ai), a travel
 safety assistant that answers questions about a journey from live weather, hazard,
@@ -10,7 +13,9 @@ modules reason about — every hazard, forecast, route and transit status — en
 system through here. Nothing downstream can be more truthful than what this module
 hands it.
 
-All eight phases of the module plan are delivered and merged.
+All eight phases of the module plan are delivered and merged. Every line of
+module 04 — adapters, transport, registry, endpoints and tests — is my own work
+within the eight-person build; the other seven modules are my teammates'.
 
 ```
 8 endpoints · 9 registered providers · 7 callable · 645 tests · 28 live canaries

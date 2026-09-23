@@ -1,5 +1,7 @@
 # [M04] External Data Services — Completion Report (Phase 0–7)
 
+**Author: ประภากรณ์ ภิธรรมมา · Prapakorn Phithamma · 116730462033-5**
+
 > All eight phases of
 > `IMPLEMENTATION_PLANS/04_EXTERNAL_DATA_SERVICES_IMPLEMENTATION.md` are done.
 > Six of seven capabilities answer with real provider data. The seventh,
