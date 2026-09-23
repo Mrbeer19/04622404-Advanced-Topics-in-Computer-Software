@@ -129,12 +129,38 @@ external-data/
     api/           internal endpoints and the error envelope
     cache/         Redis with a stampede lock and negative caching
   config/providers.yaml     governance record: licence, quota, coverage, owner
-  tests/                    29 files, 517 tests, real captured fixtures
+  tests/                    30 files, 645 tests, real captured fixtures
 docs/
   M04-external-data.md      completion report: every acceptance item with evidence
   sample-records/           real output, for the two modules downstream
 ci/external-data.yml        the module's CI workflow
 ```
+
+## Where this code comes from
+
+`external-data/` is not a copy pasted into the lab. It is a **git subtree** of
+`services/external-data` in the project repository, and it carries that directory's
+own commit history — the ten `[M04]` commits in the log above the merge are the ones
+I pushed to the team repo, phase by phase.
+
+```bash
+git log LAB5/external-data              # the module's real history, in this repo
+git remote add m04 https://github.com/Mrbeer19/travel-safety-ai.git
+git subtree pull --prefix=LAB5/external-data m04 m04-external-data
+```
+
+`m04-external-data` is that one directory's history split out of the project's `main`,
+kept on my fork so the team repository stays untouched. Refreshing it after new module
+work is merged upstream:
+
+```bash
+# in a clone of PROxTAE/travel-safety-ai
+git fetch origin main
+git subtree split --prefix=services/external-data origin/main -b m04-external-data
+git push -f https://github.com/Mrbeer19/travel-safety-ai.git m04-external-data
+```
+
+`docs/` and `ci/` beside it are lab-side copies, not part of the subtree.
 
 ## The registry
 
